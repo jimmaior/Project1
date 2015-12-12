@@ -42,9 +42,6 @@ public class MainFragment extends Fragment implements AdapterView.OnItemClickLis
         // Required empty public constructor
     }
 
-    // getter and setter are required for RetainedFragment
-    public void setMovieList(List data) { this.mMovies = data; }
-    public List getMovieList() { return mMovies; }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -62,8 +59,6 @@ public class MainFragment extends Fragment implements AdapterView.OnItemClickLis
         intent.putExtra("command", "query");
         getActivity().startService(intent);
 
-        // save state when the parent activity is shut down
-        setRetainInstance(true);
 
     }
 

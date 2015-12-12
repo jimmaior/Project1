@@ -1,7 +1,6 @@
 package me.jimm.popularmovies.ui;
 
 import android.os.Bundle;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -15,7 +14,6 @@ public class MainActivity extends AppCompatActivity {
 
     private final String TAG = MainActivity.class.getSimpleName();
 
-    private MainFragment mainFragment;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,27 +32,17 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            // find the retained fragment on activity restarts
-            FragmentManager fm = getSupportFragmentManager();
-            mainFragment = (MainFragment) fm.findFragmentByTag("main");
+            // create a new fragment to be placed in the activity layout
+            MainFragment mainFragment = new MainFragment();
 
+            // in case, this activity was started with special instructions from an Intent,
+            // pass the Intent's extras to the fragment as arguments
+            mainFragment.setArguments(getIntent().getExtras());
 
-
-            // create the fragment and data the first time
-            if (mainFragment  == null) {
-                // add the fragment
-                mainFragment = new MainFragment();
-
-
-                // in case, this activity was started with special instructions from an Intent,
-                // pass the Intent's extras to the fragment as arguments
-                mainFragment.setArguments(getIntent().getExtras());
-
-                // add the fragment to the fragment contain
-                fm.beginTransaction()
-                        .add(R.id.fragment_container, mainFragment, "main")
-                        .commit();
-            }
+            // add the fragment to the fragment contain
+            getSupportFragmentManager().beginTransaction()
+                .add(R.id.fragment_container, mainFragment)
+                    .commit();
         }
 
 
