@@ -1,0 +1,186 @@
+package me.jimm.popularmovies;
+
+import android.app.IntentService;
+import android.content.Intent;
+import android.content.Context;
+import android.net.Uri;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.os.ResultReceiver;
+import android.util.Log;
+
+import me.jimm.popularmovies.model.Movie;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
+
+public class MovieDbApiService extends IntentService {
+
+    // public members
+    public static final int STATUS_RUNNING = 100;
+    public static final int STATUS_ERROR = -100;
+    public static final int STATUS_FINISHED = 200;
+
+    // private members
+    private static final String TAG = MovieDbApiService.class.getSimpleName();
+
+    private static final String MOVIE_API_RESULTS = "results";
+    private static final String MOVIE_API_RESULTS_ID = "id";
+    private static final String MOVIE_API_RESULTS_POPULARITY = "popularity";
+    private static final String MOVIE_API_RESULTS_TITLE = "original_title";
+    private static final String MOVIE_API_RESULTS_RELEASE_DATE = "release_date";
+    private static final String MOVIE_API_RESULTS_RATING = "vote_average";
+    private static final String MOVIE_API_RESULTS_PLOT = "overview";
+    private static final String MOVIE_API_RESULTS_POSTER_PATH = "poster_path";
+
+    // full poster path
+    private static final String MOVIEDB_BASE_URL = "http://image.tmdb.org/t/p/";
+    //private static final String MOVIEDB_IMAGE_SIZE = "w185/";
+    //private static final String MOVIEDB_IMAGE_SIZE = "w342/"; // seems better
+    private static final String MOVIEDB_IMAGE_SIZE = "w500/"; // seems better
+    //private static final String MOVIEDB_IMAGE_SIZE = "original/"; // seems better
+
+
+    public MovieDbApiService() {
+        super("MovieService");
+    }
+
+    public void onCreate() {
+        super.onCreate();
+        Log.d(TAG, "onCreate");
+    }
+
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        Log.d(TAG, "onHandleIntent()");
+        final ResultReceiver receiver = intent.getParcelableExtra("receiver");
+
+        String command = intent.getStringExtra("command");
+        Bundle bundle = new Bundle();
+        if (command.equals("query")) {
+            receiver.send(STATUS_RUNNING, bundle.EMPTY);
+            try {
+                // get some data
+                Log.d(TAG, "get some data");
+                String json = handleActionFetchPopularMovies();
+                ArrayList results = createMovieListArray(json);
+                bundle.putParcelableArrayList("results", results);
+                receiver.send(STATUS_FINISHED, bundle);
+            } catch (Exception e) {
+                bundle.putString(Intent.EXTRA_TEXT, e.toString());
+                receiver.send(STATUS_ERROR, bundle);
+            }
+
+        }
+    }
+
+    @Nullable
+    private String handleActionFetchPopularMovies() {
+        Log.d(TAG, "handleActionFetechPopularMovies()");
+
+        // need to be declared outside of the try so they can be closed in the finally block
+        HttpURLConnection urlConnection = null;
+        BufferedReader reader = null;
+
+        String popularMoviesJsonString = null;
+
+        try {
+            // construct the URL
+            final String BASE_URL = "http://api.themoviedb.org/3/discover/movie?";
+            final String SORT_BY_PARAM = "sort_by";
+            final String API_KEY_PARAM = "api_key";
+
+            Uri builtUri = Uri.parse(BASE_URL).buildUpon()
+                    .appendQueryParameter(SORT_BY_PARAM, "popularity.desc")
+                    .appendQueryParameter(API_KEY_PARAM, BuildConfig.MOVIE_DB_API_KEY)
+                    .build();
+
+            URL url = new URL(builtUri.toString());
+
+            // create the request to MovieDB
+            urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setRequestMethod("GET");
+            urlConnection.connect();
+
+            // Read the input stream into a String
+            InputStream inputStream = urlConnection.getInputStream();
+            StringBuffer buffer = new StringBuffer();
+            if (inputStream == null) {
+                // Nothing to do
+                return null;
+            }
+            reader = new BufferedReader(new InputStreamReader(inputStream));
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                buffer.append(line + "\n");  // adding a new line character for debug readability
+            }
+
+            if (buffer.length() == 0) {
+                // stream was empty, no point in parsing
+                return null;
+            } else {
+                // get structured data from JSON String
+                popularMoviesJsonString = buffer.toString();
+            }
+        }
+        catch (IOException ioe) {
+            Log.e(TAG, "Error attempting to get the movie data" + ioe.getMessage(), ioe);
+        } finally {
+            if (urlConnection != null) {
+                urlConnection.disconnect();
+            }
+            if (reader != null) {
+                try{
+                    reader.close();
+                } catch (final IOException e) {
+                    Log.e(TAG, "Error closing stream" + e.getMessage(), e);
+                }
+            }
+        }
+
+        return popularMoviesJsonString;
+    }
+
+    private ArrayList createMovieListArray(String jsonString){
+        Log.d(TAG, "createMovieListArray");
+
+        ArrayList<Movie> movieList = new ArrayList<Movie>();
+
+        try {
+            JSONObject movieListJson = new JSONObject(jsonString);
+            JSONArray movieArray = movieListJson.getJSONArray(MOVIE_API_RESULTS);
+            for(int i=0; i < movieArray.length(); i++){
+                JSONObject movieJsonObject = movieArray.getJSONObject(i);
+                Movie movie = new Movie();
+
+                movie.setMovieId((int) movieJsonObject.get(MOVIE_API_RESULTS_ID));
+                movie.setTitle((String) movieJsonObject.get(MOVIE_API_RESULTS_TITLE));
+                movie.setReleaseDate((String) movieJsonObject.get(MOVIE_API_RESULTS_RELEASE_DATE));
+                movie.setUserRating((Double) movieJsonObject.get(MOVIE_API_RESULTS_RATING));
+                movie.setOverview((String) movieJsonObject.get(MOVIE_API_RESULTS_PLOT));
+                movie.setPosterPath(
+                        MOVIEDB_BASE_URL +
+                                MOVIEDB_IMAGE_SIZE +
+                                (String) movieJsonObject.get(MOVIE_API_RESULTS_POSTER_PATH));
+                movie.setPopularity((Double) movieJsonObject.get(MOVIE_API_RESULTS_POPULARITY));
+
+                movieList.add(movie);
+            }
+
+        } catch (JSONException je) {
+            Log.e(TAG, "Error parsong the JSON string" + je.getMessage());
+        }
+        return movieList;
+    }
+}
