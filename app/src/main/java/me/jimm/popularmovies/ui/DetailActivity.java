@@ -1,14 +1,12 @@
 package me.jimm.popularmovies.ui;
 
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
 import me.jimm.popularmovies.R;
 
 public class DetailActivity extends AppCompatActivity {
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -16,15 +14,21 @@ public class DetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_detail);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//            }
-//        });
-//        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        // create a new fragment to be placed in the activity layout
+        DetailFragment detailFragment = new DetailFragment();
+
+        // this activity was started to display detailed movie data, so we need to get that
+        // data and pass it to the detail fragment as an argument
+        detailFragment.setArguments(getIntent().getExtras());
+
+        // add the fragment to the fragment manager
+        getSupportFragmentManager().beginTransaction()
+                .add(R.id.detail_fragment_container, detailFragment)
+                .commit();
+
+
     }
 }
