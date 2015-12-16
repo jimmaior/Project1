@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <ListPreference
-        android:key="preferences_sort_order"
+        android:key="sort_order"
         android:title="@string/pref_sort"
         android:dialogTitle=" Sort Order"
         android:entries="@array/sort_order_label"

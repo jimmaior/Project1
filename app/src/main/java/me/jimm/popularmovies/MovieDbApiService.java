@@ -30,10 +30,14 @@ public class MovieDbApiService extends IntentService {
     public static final int STATUS_RUNNING = 100;
     public static final int STATUS_ERROR = -100;
     public static final int STATUS_FINISHED = 200;
+    public static final String MOVIE_API_PARAM_SORT_BY_POPULARITY = "popularity.desc";
+    public static final String MOVIE_API_PARAM_SORT_BY_RATING = "vote_average.desc";
+
 
     // private members
     private static final String TAG = MovieDbApiService.class.getSimpleName();
 
+    // JSON field
     private static final String MOVIE_API_RESULTS = "results";
     private static final String MOVIE_API_RESULTS_ID = "id";
     private static final String MOVIE_API_RESULTS_POPULARITY = "popularity";
@@ -43,12 +47,16 @@ public class MovieDbApiService extends IntentService {
     private static final String MOVIE_API_RESULTS_PLOT = "overview";
     private static final String MOVIE_API_RESULTS_POSTER_PATH = "poster_path";
 
+
+    // API Parameters ////////////////////////////////////////////////////////
+
     // full poster path
-    private static final String MOVIEDB_BASE_URL = "http://image.tmdb.org/t/p/";
-    //private static final String MOVIEDB_IMAGE_SIZE = "w185/";
-    //private static final String MOVIEDB_IMAGE_SIZE = "w342/"; // seems better
-    private static final String MOVIEDB_IMAGE_SIZE = "w500/"; // seems better
-    //private static final String MOVIEDB_IMAGE_SIZE = "original/"; // seems better
+    private static final String MOVIE_API_BASE_URL = "http://image.tmdb.org/t/p/";
+    //private static final String MOVIE_API_IMAGE_SIZE = "w185/";
+    //private static final String MOVIE_API_IMAGE_SIZE = "w342/"; // seems better
+    private static final String MOVIE_API_IMAGE_SIZE = "w500/"; // seems better
+    //private static final String MOVIE_API_IMAGE_SIZE = "original/"; // seems better
+
 
 
     public MovieDbApiService() {
@@ -67,12 +75,13 @@ public class MovieDbApiService extends IntentService {
 
         String command = intent.getStringExtra("command");
         Bundle bundle = new Bundle();
+        // todo remove hard-coded 'query'
         if (command.equals("query")) {
             receiver.send(STATUS_RUNNING, bundle.EMPTY);
             try {
                 // get some data
                 Log.d(TAG, "get some data");
-                String json = handleActionFetchPopularMovies();
+                String json = handleActionFetchPopularMovies(intent);
                 ArrayList results = createMovieListArray(json);
                 bundle.putParcelableArrayList("results", results);
                 receiver.send(STATUS_FINISHED, bundle);
@@ -85,8 +94,8 @@ public class MovieDbApiService extends IntentService {
     }
 
     @Nullable
-    private String handleActionFetchPopularMovies() {
-        Log.d(TAG, "handleActionFetechPopularMovies()");
+    private String handleActionFetchPopularMovies(Intent intent) {
+        Log.d(TAG, "handleActionFetchPopularMovies()");
 
         // need to be declared outside of the try so they can be closed in the finally block
         HttpURLConnection urlConnection = null;
@@ -98,16 +107,18 @@ public class MovieDbApiService extends IntentService {
             // construct the URL
             final String BASE_URL = "http://api.themoviedb.org/3/discover/movie?";
             final String SORT_BY_PARAM = "sort_by";
+            final String PAGE_PARAM = "page";
             final String API_KEY_PARAM = "api_key";
 
             Uri builtUri = Uri.parse(BASE_URL).buildUpon()
-                    .appendQueryParameter(SORT_BY_PARAM, "popularity.desc")
+                    .appendQueryParameter(SORT_BY_PARAM, intent.getStringExtra("sort_by"))
+                    .appendQueryParameter(PAGE_PARAM, Integer.toString(intent.getIntExtra("page", 1)))
                     .appendQueryParameter(API_KEY_PARAM, BuildConfig.MOVIE_DB_API_KEY)
                     .build();
 
             URL url = new URL(builtUri.toString());
 
-            // create the request to MovieDB
+            // create the request to MOVIE_API
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod("GET");
             urlConnection.connect();
@@ -152,6 +163,7 @@ public class MovieDbApiService extends IntentService {
         return popularMoviesJsonString;
     }
 
+
     private ArrayList createMovieListArray(String jsonString){
         Log.d(TAG, "createMovieListArray");
 
@@ -164,22 +176,22 @@ public class MovieDbApiService extends IntentService {
                 JSONObject movieJsonObject = movieArray.getJSONObject(i);
                 Movie movie = new Movie();
 
-                movie.setMovieId((int) movieJsonObject.get(MOVIE_API_RESULTS_ID));
-                movie.setTitle((String) movieJsonObject.get(MOVIE_API_RESULTS_TITLE));
-                movie.setReleaseDate((String) movieJsonObject.get(MOVIE_API_RESULTS_RELEASE_DATE));
-                movie.setUserRating((Double) movieJsonObject.get(MOVIE_API_RESULTS_RATING));
-                movie.setOverview((String) movieJsonObject.get(MOVIE_API_RESULTS_PLOT));
+                movie.setMovieId(movieJsonObject.getInt(MOVIE_API_RESULTS_ID));
+                movie.setTitle(movieJsonObject.getString(MOVIE_API_RESULTS_TITLE));
+                movie.setReleaseDate(movieJsonObject.getString(MOVIE_API_RESULTS_RELEASE_DATE));
+                movie.setUserRating(movieJsonObject.getDouble(MOVIE_API_RESULTS_RATING));
+                movie.setOverview( movieJsonObject.getString(MOVIE_API_RESULTS_PLOT));
                 movie.setPosterPath(
-                        MOVIEDB_BASE_URL +
-                                MOVIEDB_IMAGE_SIZE +
-                                (String) movieJsonObject.get(MOVIE_API_RESULTS_POSTER_PATH));
-                movie.setPopularity((Double) movieJsonObject.get(MOVIE_API_RESULTS_POPULARITY));
+                        MOVIE_API_BASE_URL +
+                        MOVIE_API_IMAGE_SIZE +
+                        movieJsonObject.getString(MOVIE_API_RESULTS_POSTER_PATH));
+                movie.setPopularity( movieJsonObject.getDouble(MOVIE_API_RESULTS_POPULARITY));
 
                 movieList.add(movie);
             }
 
         } catch (JSONException je) {
-            Log.e(TAG, "Error parsong the JSON string" + je.getMessage());
+            Log.e(TAG, "Error parsing the JSON string" + je.getMessage());
         }
         return movieList;
     }

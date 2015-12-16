@@ -10,7 +10,7 @@ import android.util.Log;
  */
 public class MovieDbApiResponseReceiver extends ResultReceiver {
 
-    private static final String TAG = "JIMM" + MovieDbApiResponseReceiver.class.getSimpleName();
+    private static final String TAG = MovieDbApiResponseReceiver.class.getSimpleName();
 
     private Receiver mReceiver;
 

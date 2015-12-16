@@ -7,6 +7,10 @@ import me.jimm.popularmovies.R;
 
 public class DetailActivity extends AppCompatActivity {
 
+    private static final String DETAIL_FRAGMENT_TAG = "detail";
+    private static final String TAG = DetailActivity.class.getSimpleName();
+
+    private DetailFragment detailFragment = new DetailFragment();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,9 +30,7 @@ public class DetailActivity extends AppCompatActivity {
 
         // add the fragment to the fragment manager
         getSupportFragmentManager().beginTransaction()
-                .add(R.id.detail_fragment_container, detailFragment)
+                .add(R.id.detail_fragment_container, detailFragment, DETAIL_FRAGMENT_TAG)
                 .commit();
-
-
     }
 }
