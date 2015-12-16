@@ -6,7 +6,8 @@ import android.widget.AbsListView;
 /**
  * Created by generaluser on 12/15/15.
  * see:
- * https://github.com/codepath/android_guides/wiki/Endless-Scrolling-with-AdapterViews-and-RecyclerView
+ * older: https://github.com/codepath/android_guides/wiki/Endless-Scrolling-with-AdapterViews-and-RecyclerView
+ * replaced byL http://benjii.me/2010/08/endless-scrolling-listview-in-android/
  */
 public abstract class EndlessScrollListener implements AbsListView.OnScrollListener {
 
