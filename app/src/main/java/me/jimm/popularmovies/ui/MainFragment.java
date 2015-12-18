@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -28,30 +29,49 @@ public class MainFragment extends Fragment implements
     public MovieDbApiResponseReceiver mReceiver;
 
     private static final String TAG = MainFragment.class.getSimpleName();
-    private static final String SORT_PREFERENCE = "sort_order"; // ListPreference key
-    private static final String MOVIE_LIST = "movie_list";
+    private static final String SORT_PREFERENCE = "sort_order_settings"; // ListPreference key
+    private static final String PERSIST_MOVIE_LIST = "movie_list";
+    private static final String PERSIST_SORT_ORDER = "current_sort_order";
 
     private SharedPreferences mPrefs;
-    private SharedPreferences.OnSharedPreferenceChangeListener mListener;
+    private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener;
     private GridView mGridView;
     private MovieDbAdapter mMovieDbAdapter;
     private ArrayList<Movie> mMovies;
-
+    private String mCurrentSortOrder;
+    private int mLastPage = 1;  // last page of data loaded, updated on OnScrollListener
 
 
     public MainFragment() {
         // Required empty public constructor
     }
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
 
+        if (savedInstanceState != null) {
+            if (savedInstanceState.containsKey(PERSIST_MOVIE_LIST)) {
+                mMovies = savedInstanceState.getParcelableArrayList(PERSIST_MOVIE_LIST);
+            } else {
+               mMovies = new ArrayList();
+            }
+            if (savedInstanceState.containsKey(PERSIST_SORT_ORDER)) {
+                mCurrentSortOrder = savedInstanceState.getString(PERSIST_SORT_ORDER);
+            } else {
+                mCurrentSortOrder = getSortOrderPreference();
+            }
+
+        } else {
+            mMovies = new ArrayList();
+            mCurrentSortOrder = getSortOrderPreference();
+            fetchMovieData(getActivity());
+        }
+
         // register this fragment as a listener for OnSharedPreferenceChangeListener
         mPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        registerPreferenceListener();
+        registerSharedPreferenceListener();
 
     }
 
@@ -62,15 +82,21 @@ public class MainFragment extends Fragment implements
 
         View v =  inflater.inflate(R.layout.fragment_main, container, false);
 
-        // starts service component that fetches data from the MovieDB API
-        mMovies = new ArrayList<>();
         mMovieDbAdapter = new MovieDbAdapter(getActivity());
-        //fetchMovieData(getActivity());
-
-
         mGridView = (GridView) v.findViewById(R.id.movies_grid_view);
         mGridView.setAdapter(mMovieDbAdapter);
         mGridView.setOnItemClickListener(this);
+
+        // register gridview as a scroll listener
+        mGridView.setOnScrollListener(new EndlessScrollListener() {
+            @Override
+            public boolean onLoadMore(int page, int totalItemCount) {
+                Log.d(TAG, "onLoadMore");
+                mLastPage = page;
+                fetchMovieData(getActivity());
+                return true;
+            }
+        });
 
         return v;
     }
@@ -79,17 +105,45 @@ public class MainFragment extends Fragment implements
     public void onPause() {
         super.onPause();
         Log.d(TAG, "onPause");
-        mReceiver.setReceiver(null); // clear receiver so are no leaks.
+        if (mReceiver != null) {
+            mReceiver.setReceiver(null);
+        }
+        if (mPrefs != null) {
+            mPrefs.unregisterOnSharedPreferenceChangeListener(mSharedPreferenceChangeListener);
+        }
+
+
+
+            Log.d(TAG, "mCurrentSortOrder=" + mCurrentSortOrder);
+            Log.d(TAG, "getSortOrderPreference()=" + getSortOrderPreference());
+
+            //                    mMovies.clear();
+            //                    mLastPage = 1;
+            //                    fetchMovieData(getActivity());
+
     }
+
 
     @Override
     public void onResume() {
         super.onResume();
         Log.d(TAG, "onResume");
+        if (mSharedPreferenceChangeListener != null) {
+            mPrefs.registerOnSharedPreferenceChangeListener(mSharedPreferenceChangeListener);
+        }
         if (mReceiver != null ) {
             mReceiver.setReceiver(this); // reset the receiver
         }
-        fetchMovieData(getActivity());
+
+        Log.d(TAG, "mCurrentSortOrder=" + mCurrentSortOrder);
+        Log.d(TAG, "getSortOrderPreference()=" + getSortOrderPreference());
+
+        if (!mCurrentSortOrder.equals(getSortOrderPreference())) {
+            mCurrentSortOrder = getSortOrderPreference();
+            mMovies.clear();
+            mLastPage = 1;
+            fetchMovieData(getActivity());
+        }
     }
 
     @Override
@@ -106,12 +160,10 @@ public class MainFragment extends Fragment implements
                 break;
             case MovieDbApiService.STATUS_FINISHED:
                 Log.d(TAG, "MovieDbApiService finished");
-                mMovies = resultData.getParcelableArrayList("results");
-                mMovieDbAdapter = new MovieDbAdapter(getActivity());
-                //mMovieDbAdapter.clearAll();
-                //mMovieDbAdapter.addAll(mMovies);
+                ArrayList<Movie> m = resultData.getParcelableArrayList("results");
+                mMovies.addAll(m);
+                Log.d(TAG, "mMovies.size()=" + mMovies.size());
                 mMovieDbAdapter.notifyDataSetChanged();
-                mGridView.setAdapter(mMovieDbAdapter);
                 // todo hide progress
                 break;
             case MovieDbApiService.STATUS_ERROR:
@@ -126,12 +178,14 @@ public class MainFragment extends Fragment implements
         }
     }
 
-//    @Override
-//    public void onSaveInstanceState(Bundle state) {
-//        super.onSaveInstanceState(state);
-//        Log.d(TAG, "onSaveInstanceState()");
-//        state.putParcelableArrayList(MOVIE_LIST, mMovies);
-//    }
+    @Override
+    public void onSaveInstanceState(Bundle bundle) {
+        super.onSaveInstanceState(bundle);
+        Log.d(TAG, "onSaveInstanceState()");
+        bundle.putParcelableArrayList(PERSIST_MOVIE_LIST, mMovies);
+        bundle.putString(PERSIST_SORT_ORDER, mCurrentSortOrder);
+
+    }
 
 
 
@@ -144,7 +198,9 @@ public class MainFragment extends Fragment implements
     }
 
     // Private Members /////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
     private void fetchMovieData(Context context) {
+
         Log.d(TAG, "fetchMovieData");
 
         // start the service to interact with the MovieDB API
@@ -154,48 +210,53 @@ public class MainFragment extends Fragment implements
 
         final Intent intent = new Intent(Intent.ACTION_SYNC, null, context, MovieDbApiService.class);
         intent.putExtra("receiver", mReceiver);
-        intent.putExtra("sort_by", getSortOrderPreference());
+        intent.putExtra("page", mLastPage);
+        intent.putExtra("sort_by", mCurrentSortOrder);
         intent.putExtra("command", "query");
         getActivity().startService(intent);
     }
 
     private String getSortOrderPreference() {
         Log.d(TAG, "getSortOrderPreference");
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        String sortOrder = sharedPreferences.getString(SORT_PREFERENCE, "");
+        // http://stackoverflow.com/questions/2767354/default-value-of-android-preference
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String defaultValue = getActivity().getResources().getString(R.string.pref_sort_default);
+        String sortOrder = prefs.getString(SORT_PREFERENCE, defaultValue);
+     //   Toast.makeText(getActivity(), "sortOrder = " + sortOrder, Toast.LENGTH_LONG).show();
         if (sortOrder.equals("POPULARITY"))  {
             return MovieDbApiService.MOVIE_API_PARAM_SORT_BY_POPULARITY;
         } else if (sortOrder.equals("RATING")) {
             return MovieDbApiService.MOVIE_API_PARAM_SORT_BY_RATING;
         }
         else {
+            Log.e(TAG, "Sort Order undefined: sortOrder='" + sortOrder + "'");
             return null;
         }
     }
 
-    private void registerPreferenceListener()
+    public void registerSharedPreferenceListener()
     {
-        Log.d(TAG, "registerPreferenceListener");
-        mListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+      //  Log.d(TAG, "registerSharedPreferenceListener");
+        mSharedPreferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
             public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
                 Log.d(TAG, "onSharedPreferenceChanged - Pref changed for: " + key + " pref: " +
                         prefs.getString(key, null));
-                //fetchMovieData(getActivity());
+                // reset to initial state
+                mLastPage = 1;
           }
         };
 
-        mPrefs.registerOnSharedPreferenceChangeListener(mListener);
+        mPrefs.registerOnSharedPreferenceChangeListener(mSharedPreferenceChangeListener);
     }
 
     private class MovieDbAdapter extends BaseAdapter{
 
         private final String TAG = MovieDbAdapter.class.getSimpleName();
-
         private Context mContext;
 
-
         public MovieDbAdapter(Context c) {
-            Log.d(TAG, "MovieDbAdapter Constructed");
+            Log.d(TAG, "MovieDbAdapter Constructor");
             mContext = c;
         }
 
@@ -216,13 +277,13 @@ public class MainFragment extends Fragment implements
         }
 
         @Override
-        // create a new ImageView for each item referenced by the Adapter
         public View getView(int position, View convertView, ViewGroup parent) {
+            Movie movie = (Movie) getItem(position);
+
             ImageView imageView;
             if (convertView == null) {
-                // if it's not recycled, initialize some attributes
                 imageView = new ImageView(mContext);
-                // adjusts view ot fix the aspect ratio of the image
+                // adjusts view to allow image to render with an adequate aspect ratio.
                 imageView.setAdjustViewBounds(true);
                 imageView.setPadding(4, 4, 4, 4);
             } else {
@@ -230,7 +291,8 @@ public class MainFragment extends Fragment implements
             }
 
             Picasso.with(mContext)
-                    .load(mMovies.get(position).getPosterPath())
+                    .load(movie.getPosterPath())
+                    .placeholder(R.drawable.ic_photo_white_48dp)
                     .into(imageView);
 
             return imageView;
@@ -240,8 +302,7 @@ public class MainFragment extends Fragment implements
             mMovies.clear();
         }
 
-        public void addAll(Collection<Movie> movies) {
-            Log.d(TAG, "addAll");
+        public void add(Collection<Movie> movies) {
             mMovies.addAll(movies);
             notifyDataSetChanged();
         }

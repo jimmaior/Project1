@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
             if (savedInstanceState != null) {
                 return;
             } else {
-                // otherwise, we need to add the main fragment with the UI.
+                // add the fragment which contains the primary UI.
                 MainFragment mainFragment = new MainFragment();
                 getSupportFragmentManager().beginTransaction()
                     .add(R.id.fragment_container, mainFragment, "main")
@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Log.d(TAG, "onOptionItemSelected - Settings" );
+            Log.d(TAG, "onOptionItemSelected - Settings");
 
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, new SettingsFragment(), "settings")

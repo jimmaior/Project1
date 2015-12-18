@@ -115,8 +115,9 @@ public class MovieDbApiService extends IntentService {
                     .appendQueryParameter(PAGE_PARAM, Integer.toString(intent.getIntExtra("page", 1)))
                     .appendQueryParameter(API_KEY_PARAM, BuildConfig.MOVIE_DB_API_KEY)
                     .build();
-
             URL url = new URL(builtUri.toString());
+
+            Log.d(TAG, url.toString());
 
             // create the request to MOVIE_API
             urlConnection = (HttpURLConnection) url.openConnection();
