@@ -16,7 +16,7 @@ public class Movie implements Parcelable{
     private final static String KEY_USER_RATING = "USER_RATING";
     private final static String KEY_POPULARITY = "POPULARITY";
     private final static String KEY_POSTER_PATH = "POSTER_PATH";
-    private final static String KEY_RELEASE_DATE = "RELEASES_DATE";
+    private final static String KEY_RELEASE_DATE = "RELEASE_DATE";
     private final static String KEY_OVERVIEW = "OVERVIEW";
 
     // members

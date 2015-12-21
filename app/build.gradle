@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "me.jimm.popularmovies"
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
@@ -18,11 +18,7 @@ android {
         }
     }
     buildTypes.each {
-        // Replace MyOpenWeatherMapApiKey with your API Key in the format '"abcdefgh012345"'
-        // Use both single quotes followed by double quotes.
-        // it.buildConfigField 'String', 'OPEN_WEATHER_MAP_API_KEY', MyOpenWeatherMapApiKey
-        //it.buildConfigField 'String', 'MOVIE_DB_API_KEY', '"b4baf706506284c6d95766d92348a3ab"'
-        it.buildConfigField 'String', 'MOVIE_DB_API_KEY', MyMovieDBApiKey
+          it.buildConfigField 'String', 'MOVIE_DB_API_KEY', MyMovieDBApiKey
 
     }
 }

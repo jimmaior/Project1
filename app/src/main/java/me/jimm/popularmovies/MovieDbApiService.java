@@ -2,7 +2,6 @@ package me.jimm.popularmovies;
 
 import android.app.IntentService;
 import android.content.Intent;
-import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -21,7 +20,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
 
 
 public class MovieDbApiService extends IntentService {
@@ -37,7 +35,7 @@ public class MovieDbApiService extends IntentService {
     // private members
     private static final String TAG = MovieDbApiService.class.getSimpleName();
 
-    // JSON field
+    // JSON fields
     private static final String MOVIE_API_RESULTS = "results";
     private static final String MOVIE_API_RESULTS_ID = "id";
     private static final String MOVIE_API_RESULTS_POPULARITY = "popularity";
@@ -51,11 +49,12 @@ public class MovieDbApiService extends IntentService {
     // API Parameters ////////////////////////////////////////////////////////
 
     // full poster path
-    private static final String MOVIE_API_BASE_URL = "http://image.tmdb.org/t/p/";
-    //private static final String MOVIE_API_IMAGE_SIZE = "w185/";
-    //private static final String MOVIE_API_IMAGE_SIZE = "w342/"; // seems better
-    private static final String MOVIE_API_IMAGE_SIZE = "w500/"; // seems better
-    //private static final String MOVIE_API_IMAGE_SIZE = "original/"; // seems better
+    private static final String MOVIE_IMAGE_BASE_URL = "http://image.tmdb.org/t/p/";
+    private static final String MOVIE_VOTE_COUNT_GTE_VALUE = "10";
+    //private static final String MOVIE_IMAGE_SIZE = "w185/";
+    //private static final String MOVIE_IMAGE_SIZE = "w342/"; // seems better
+    private static final String MOVIE_IMAGE_SIZE = "w500/"; // seems better
+    //private static final String MOVIE_IMAGE_SIZE = "original/"; // seems better
 
 
 
@@ -79,7 +78,6 @@ public class MovieDbApiService extends IntentService {
         if (command.equals("query")) {
             receiver.send(STATUS_RUNNING, bundle.EMPTY);
             try {
-                // get some data
                 Log.d(TAG, "get some data");
                 String json = handleActionFetchPopularMovies(intent);
                 ArrayList results = createMovieListArray(json);
@@ -109,9 +107,11 @@ public class MovieDbApiService extends IntentService {
             final String SORT_BY_PARAM = "sort_by";
             final String PAGE_PARAM = "page";
             final String API_KEY_PARAM = "api_key";
+            final String VOTE_COUNT_GTE  = "vote_count.gte";
 
             Uri builtUri = Uri.parse(BASE_URL).buildUpon()
                     .appendQueryParameter(SORT_BY_PARAM, intent.getStringExtra("sort_by"))
+                    .appendQueryParameter(VOTE_COUNT_GTE, MOVIE_VOTE_COUNT_GTE_VALUE)
                     .appendQueryParameter(PAGE_PARAM, Integer.toString(intent.getIntExtra("page", 1)))
                     .appendQueryParameter(API_KEY_PARAM, BuildConfig.MOVIE_DB_API_KEY)
                     .build();
@@ -183,8 +183,8 @@ public class MovieDbApiService extends IntentService {
                 movie.setUserRating(movieJsonObject.getDouble(MOVIE_API_RESULTS_RATING));
                 movie.setOverview( movieJsonObject.getString(MOVIE_API_RESULTS_PLOT));
                 movie.setPosterPath(
-                        MOVIE_API_BASE_URL +
-                        MOVIE_API_IMAGE_SIZE +
+                        MOVIE_IMAGE_BASE_URL +
+                                MOVIE_IMAGE_SIZE +
                         movieJsonObject.getString(MOVIE_API_RESULTS_POSTER_PATH));
                 movie.setPopularity( movieJsonObject.getDouble(MOVIE_API_RESULTS_POPULARITY));
 

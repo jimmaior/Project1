@@ -1,8 +1,8 @@
 package me.jimm.popularmovies.ui;
 
-import android.content.Intent;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +10,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import me.jimm.popularmovies.R;
 import me.jimm.popularmovies.model.Movie;
@@ -35,7 +38,7 @@ public class DetailFragment extends Fragment {
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        Log.d(TAG, "onCreate");
         Bundle b = getArguments();
         mMovie = b.getParcelable("movie");
 
@@ -44,6 +47,7 @@ public class DetailFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.d(TAG, "onCreateView");
         View v = inflater.inflate(R.layout.fragment_detail, container, false);
 
         mTvTitle = (TextView) v.findViewById(R.id.tv_title);
@@ -55,14 +59,36 @@ public class DetailFragment extends Fragment {
                 .into(mIvPoster);
 
         mTvReleaseDate = (TextView) v.findViewById(R.id.tv_release_date);
-        mTvReleaseDate.setText(mMovie.getReleaseDate());
+        //mTvReleaseDate.setText(mMovie.getReleaseDate());
+        mTvReleaseDate.setText(formatReleaseDate(mMovie.getReleaseDate()));
 
         mTvRating = (TextView) v.findViewById(R.id.tv_user_rating);
-        mTvRating.setText( Double.toString(mMovie.getUserRating()));
+        // mTvRating.setText( Double.toString(mMovie.getUserRating()));
+        mTvRating.setText(formatRating(mMovie.getUserRating()));
 
         mTvOverview = (TextView) v.findViewById(R.id.tv_overview);
         mTvOverview.setText(mMovie.getOverview());
 
         return v;
+    }
+
+    // private methods
+    private String formatRating(double rating) {
+        String formattedRating;
+        formattedRating = Long.toString(Math.round(rating));
+        return formattedRating;
+    }
+
+    private String formatReleaseDate(String sDate) {
+        String year = null;
+        SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
+        try {
+            Date date = yearFormat.parse(sDate);
+            year = yearFormat.format(date);
+
+        } catch (java.text.ParseException pe) {
+            Log.e(TAG, pe.getMessage());
+        }
+        return year;
     }
 }

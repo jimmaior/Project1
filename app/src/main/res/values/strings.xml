@@ -10,7 +10,7 @@
     <string name="pref_sort_summary">Sort in descending order by popularity or by user rating</string>
 
     <!-- Detail Fragment-->
-    <string name="label_release_date">Release Date</string>
-    <string name="label_user_rating">Average User Rating</string>
+    <string name="label_release_date">Released in</string>
+    <string name="label_user_rating">Rating</string>
 
 </resources>
