@@ -59,11 +59,9 @@ public class DetailFragment extends Fragment {
                 .into(mIvPoster);
 
         mTvReleaseDate = (TextView) v.findViewById(R.id.tv_release_date);
-        //mTvReleaseDate.setText(mMovie.getReleaseDate());
         mTvReleaseDate.setText(formatReleaseDate(mMovie.getReleaseDate()));
 
         mTvRating = (TextView) v.findViewById(R.id.tv_user_rating);
-        // mTvRating.setText( Double.toString(mMovie.getUserRating()));
         mTvRating.setText(formatRating(mMovie.getUserRating()));
 
         mTvOverview = (TextView) v.findViewById(R.id.tv_overview);
@@ -73,12 +71,19 @@ public class DetailFragment extends Fragment {
     }
 
     // private methods
+    /**
+     * converts the user ratings provided by the API as a double
+     * into a single digit formatted as a string
+     * */
     private String formatRating(double rating) {
         String formattedRating;
         formattedRating = Long.toString(Math.round(rating));
         return formattedRating;
     }
 
+    /**
+     * converts a string date in the form of yyyy-mm-dd to yyyy
+     * */
     private String formatReleaseDate(String sDate) {
         String year = null;
         SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");

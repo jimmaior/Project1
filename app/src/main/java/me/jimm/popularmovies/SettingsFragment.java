@@ -45,7 +45,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key)
     {
         Log.d(TAG, "onSharedPreferenceChanged");
-       updatePreferenceSummary(findPreference(key));
+        updatePreferenceSummary(findPreference(key));
     }
 
     @Override

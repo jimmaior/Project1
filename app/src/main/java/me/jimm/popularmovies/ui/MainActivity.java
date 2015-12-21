@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
 
         // check that the activity is using a layout which will contain the fragment
         if (findViewById(R.id.fragment_container) != null) {
-            // However, if were being restored from a previous state, then we don't need
+            // However, if app is restored from a previous state, then we don't need
             // to do anything
             if (savedInstanceState != null) {
                 return;
@@ -39,24 +39,6 @@ public class MainActivity extends AppCompatActivity {
                         .commit();
                 }
         }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        Log.d(TAG, "onPause");
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        Log.d(TAG, "onResume");
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "onDestroy");
     }
 
     @Override

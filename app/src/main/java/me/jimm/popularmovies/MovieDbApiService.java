@@ -74,11 +74,9 @@ public class MovieDbApiService extends IntentService {
 
         String command = intent.getStringExtra("command");
         Bundle bundle = new Bundle();
-        // todo remove hard-coded 'query'
-        if (command.equals("query")) {
+        if (command.equals("get_movie_data")) {
             receiver.send(STATUS_RUNNING, bundle.EMPTY);
             try {
-                Log.d(TAG, "get some data");
                 String json = handleActionFetchPopularMovies(intent);
                 ArrayList results = createMovieListArray(json);
                 bundle.putParcelableArrayList("results", results);
@@ -87,7 +85,6 @@ public class MovieDbApiService extends IntentService {
                 bundle.putString(Intent.EXTRA_TEXT, e.toString());
                 receiver.send(STATUS_ERROR, bundle);
             }
-
         }
     }
 

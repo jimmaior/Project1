@@ -10,8 +10,6 @@ public class DetailActivity extends AppCompatActivity {
     private static final String DETAIL_FRAGMENT_TAG = "detail";
     private static final String TAG = DetailActivity.class.getSimpleName();
 
-    private DetailFragment detailFragment = new DetailFragment();
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
