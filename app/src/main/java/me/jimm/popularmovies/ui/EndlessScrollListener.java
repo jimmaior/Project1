@@ -4,7 +4,7 @@ import android.util.Log;
 import android.widget.AbsListView;
 
 /**
- * Created by generaluser on 12/15/15.
+ * Created by jimmaior on 12/15/15.
  * see:
  * older: https://github.com/codepath/android_guides/wiki/Endless-Scrolling-with-AdapterViews-and-RecyclerView
  * replaced byL http://benjii.me/2010/08/endless-scrolling-listview-in-android/

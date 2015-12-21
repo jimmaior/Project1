@@ -6,7 +6,7 @@ import android.support.v4.os.ResultReceiver;
 import android.util.Log;
 
 /**
- * Created by generaluser on 12/10/15.
+ * Created by jimmaior on 12/10/15.
  */
 public class MovieDbApiResponseReceiver extends ResultReceiver {
 

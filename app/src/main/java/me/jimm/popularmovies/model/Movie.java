@@ -6,7 +6,7 @@ import android.os.Parcelable;
 import android.support.annotation.IntegerRes;
 
 /**
- * Created by generaluser on 11/30/15.
+ * Created by jimmaior on 11/30/15.
  */
 public class Movie implements Parcelable{
 
