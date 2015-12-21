@@ -42,7 +42,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/iv_poster"
             android:padding="4dp"
-            tools:src="@drawable/antman"
+            tools:src="@drawable/poster"
             />
 
         <LinearLayout
